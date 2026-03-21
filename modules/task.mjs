@@ -1,49 +1,21 @@
 class Task {
-    constructor(taskDiv, dateInput, timeInput, selectedCategory) {
-        this.content = this.getContent(taskDiv);
-        this.date = this.getDate(dateInput);
-        this.time = this.getTime(timeInput);
-        this.dateTimeObj = this.getDateTimeObj();
-        this.categoryId = this.getCategoryId(selectedCategory);
-        this.id = crypto.randomUUID();
+    constructor(data) {
+        this.content = data.content;
+        this.date = data.date;
+        this.time = data.time;
+        this.categoryId = data.categoryId;
         this.completed = false;
+        this.id = crypto.randomUUID();
+        this.dateTimeObj = this.getDateTimeObj();
         Task.list.set(this.id, {object: this});
-    }
-    static list = new Map();
-    getContent(taskDiv) {
-        const taskBody = [];
-        for (let childEl of taskDiv.children) {
-            let obj = {};
-
-            if        (childEl.dataset.type === 'main-task') {
-                obj.type = 'mainTask';
-
-            } else if (childEl.dataset.type === 'sub-task') {
-                obj.type = 'subTask';
-                childEl = childEl.lastElementChild;
-            }
-
-            obj.text = childEl.value;
-            taskBody.push(obj);
-        }
-        return taskBody;
-    }
-    getDate(dateInput) {
-        if (dateInput.dataset.default) return undefined;
-        return dateInput.value;
-    }
-    getTime(timeInput) {
-        if (timeInput.dataset.default) return undefined;
-        return timeInput.value;
     }
     getDateTimeObj() {
         if (!this.date) return undefined;
         return new Date(`${this.date}T${this.time}`);
     }
-    getCategoryId(selectedCategory) {
-        if (selectedCategory.value === 'none') return undefined;
-        return selectedCategory.dataset.id;
-    }
+
+    static list = new Map();
+    
     static getStrippedTasks() {
         const strippedTasks = [];
         for (const task of Task.list.values()) {

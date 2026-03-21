@@ -17,12 +17,12 @@ const time = {
         const minutesString = ('0' + this.minutes).slice(-2);
         return `${hoursString}:${minutesString}`;
     },
-    update(timeInput) {
-        const inputHours = +timeInput.value.slice(0,2);
+    update(timeInputValue) {
+        const inputHours = +timeInputValue.slice(0,2);
         if (inputHours === 0) {this.hoursBase12 = 12} else {
             this.hoursBase12 = inputHours > 12 ? inputHours - 12 : inputHours;
         }
-        this.minutes = +timeInput.value.slice(3,5);
+        this.minutes = +timeInputValue.slice(3,5);
         this.meridian = inputHours >= 12 ? 'PM' : 'AM';
     }
 };
@@ -34,6 +34,7 @@ clockDiv.ariaHidden = true;
 
 const hoursUl = document.createElement('ul');
 clockDiv.appendChild(hoursUl);
+hoursUl.ariaLabel = 'hours';
 hoursUl.id = 'hours';
 for (let i = 11; i <= 12; i++) {
     const hourLi = document.createElement('li');
@@ -73,6 +74,7 @@ colonDiv.textContent = ':';
 
 const minutesUl = document.createElement('ul');
 clockDiv.appendChild(minutesUl);
+minutesUl.ariaLabel = 'minutes';
 minutesUl.id = 'minutes';
 for (let i = 50; i <= 55; i += 5)  {
     const minuteLi = document.createElement('li');
@@ -109,6 +111,7 @@ function setMinutesOfTimeInput(event) {
 
 const meridiesUl = document.createElement('ul');
 clockDiv.appendChild(meridiesUl);
+meridiesUl.ariaLabel = 'meridian';
 meridiesUl.id = 'meridies';
     const AMLi = document.createElement('li');
     meridiesUl.appendChild(AMLi);

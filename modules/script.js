@@ -2,10 +2,14 @@ import { time, snapElementsInClockBasedOnTimeObject } from "./clock.mjs";
 import { Task } from "./task.mjs";
 import * as Strings from "./strings.mjs";
 import { Category } from "./categories.mjs";
+import { updateTaskCount } from "./categoriesDom.mjs";
 
 const newSubtaskButton = document.querySelector('#new-subtask');
 const taskDiv = document.querySelector('#task');
 newSubtaskButton.addEventListener('click', addNewSubtask);
+
+
+
 function addNewSubtask() {
     const containerLi = document.createElement('li');
     containerLi.dataset.type = 'sub-task';
@@ -121,8 +125,8 @@ function getTaskHTML(task) {
             taskContent.appendChild(containerLi);
             containerLi.dataset.type = 'sub-task';
             containerLi.classList.add('sub-task');
-            containerLi.addEventListener('keydown', addNewSubtaskByPressingEnter);
-            containerLi.addEventListener('keydown', gofromLiToTextArea);
+            // containerLi.addEventListener('keydown', addNewSubtaskByPressingEnter);
+            // containerLi.addEventListener('keydown', gofromLiToTextArea);
 
             const checkBox = document.createElement('input');
             containerLi.appendChild(checkBox);
@@ -132,7 +136,6 @@ function getTaskHTML(task) {
             containerLi.appendChild(subTask);
             subTask.disabled = true;
             subTask.textContent = obj.text;
-            
         }
     }
 
@@ -141,7 +144,7 @@ function getTaskHTML(task) {
         taskContainer.appendChild(scheduleDiv);
         scheduleDiv.classList.add('schedule');
         scheduleDiv.textContent = 
-            `${setDateButton.textContent}, ${setTimeButton.textContent}`;
+            `${setDateButton.textContent}, ${setTimeButton.textContent}`;////////////
     }
 
     return taskContainer;
@@ -187,21 +190,34 @@ function deleteTask(task, taskContainer) {
     }, 500);
 }
 
-function deleteCategory(category) {
-    for (const task of category.tasks.values()) {
-        task.categoryId = undefined;
-        console.log(task)
-    }
-    Category.lists.custom.delete(category.id);
-    Category.lists.all.delete(category.id)
-    const categoryCard = document.querySelector(`.card[data-id="${category.id}"]`);
-    categoryCard.remove();
-    const categoryDialog = document.querySelector(`.page[data-id="${category.id}"]`);
-    categoryDialog.remove();
-    const categoryInput = document.querySelector(`input[data-id="${category.id}"]`);
-    categoryInput.parentElement.parentElement.remove();
-}
 
+function getTaskFormData() {
+    const categoryRadio = document.querySelector('input[name="category"]:checked');
+    let data = {};
+    data.date = dateInput.dataset.default ? undefined : dateInput.value;
+    data.time = timeInput.dataset.default ? undefined : timeInput.value;
+    data.categoryId = categoryRadio.value === 'none' ? undefined : categoryRadio.dataset.id;
+    data.content = getContent(taskDiv);
+    return data;
+}
+function getContent(taskDiv) {
+    const taskBody = [];
+    for (let childEl of taskDiv.children) {
+        let obj = {};
+
+        if        (childEl.dataset.type === 'main-task') {
+            obj.type = 'mainTask';
+
+        } else if (childEl.dataset.type === 'sub-task') {
+            obj.type = 'subTask';
+            childEl = childEl.lastElementChild;
+        }
+
+        obj.text = childEl.value;
+        taskBody.push(obj);
+    }
+    return taskBody;
+}
 
 const newTaskForm = document.querySelector('#new-task');
 const newTaskButton = document.querySelector('#text-area .done');
@@ -210,8 +226,9 @@ newTaskButton.addEventListener('click', (event) => {
     const textAreas = [...taskDiv.querySelectorAll('textarea')];
     if (!textAreas.every(tA => tA.value)) return;
     
-    const selectedCategoryRadio = document.querySelector('input[name="category"]:checked');
-    const newTask = new Task(taskDiv, dateInput, timeInput, selectedCategoryRadio);
+
+    const data = getTaskFormData();
+    const newTask = new Task(data);
 
     const newTaskHTML = getTaskHTML(newTask);
     Task.list.get(newTask.id).element = newTaskHTML;
@@ -236,27 +253,17 @@ function updateConsole(task) {
 }
 
 function resetForm() {
-    taskDiv.innerHTML = '';
+    taskDiv.innerHTML = '';/////////////
     const textareaReplacement = document.createElement('textarea');
+    taskDiv.appendChild(textareaReplacement);
     textareaReplacement.dataset.type = 'main-task';
     textareaReplacement.classList.add('main-task');
     textareaReplacement.placeholder = 'Add reminder';
-    taskDiv.appendChild(textareaReplacement);
     textareaReplacement.focus();
     
-    scheduleDiv.innerHTML = '';
+    scheduleDiv.innerHTML = '';//////////////
     newTaskForm.reset();
-    resetDateAndTime();
-}
-
-
-
-function updateTaskCount(selectedCategoryRadio) {
-    for (const category of Category.lists.all.values()) {
-        const categoryDiv = document.querySelector(`.card[data-id="${category.id}"]`);
-        const countSpan = categoryDiv.lastElementChild;
-        countSpan.textContent = category.tasks.size;
-    }
+    resetDateAndTime();/////////////////
 }
 
 
@@ -281,10 +288,10 @@ function setDefaultTimeForInput() {
     timeInput.dataset.default = true;
 }
 
-const scheduleDiv = document.querySelector('#schedule');
+const scheduleDiv = document.querySelector('#schedule');////////////////
 const dateInput = document.querySelector('#date-dialog input');
 const setDateButton = document.querySelector('#set-date');
-setDateButton.addEventListener('click', () => dateDialog.show());
+setDateButton.addEventListener('click', () => dateDialog.showModal());
 const dateDialog = document.querySelector('#date-dialog');
 const cancelDateButton = document.querySelector('#date-dialog .cancel');
 cancelDateButton.addEventListener('click', event => {
@@ -304,7 +311,10 @@ doneDateButton.addEventListener('click', (event) => {
 });
 const timeInput = document.querySelector('#time-dialog input');
 const setTimeButton = document.querySelector('#set-time');
-setTimeButton.addEventListener('click', () => timeDialog.show());
+setTimeButton.addEventListener('click', () => {
+    timeDialog.showModal();
+    document.activeElement?.blur();
+});
 const timeDialog = document.querySelector('#time-dialog');
 const cancelTimeButton = document.querySelector('#time-dialog .cancel');
 cancelTimeButton.addEventListener('click', event => {
@@ -313,18 +323,58 @@ cancelTimeButton.addEventListener('click', event => {
 });
 const doneTimeButton = document.querySelector('#time-dialog .done');
 doneTimeButton.addEventListener('click', (event) => {
+    timeDialog.close();
+
+    if (!timeInput.value) timeInput.value = time.getTimeForInput();
+    const timeInputValue = Strings.getTimeInputValueMinutesMultipleOf5(timeInput.value);
+    //This is done so if the user sets the time by tabing to the hidden index
+    timeInput.value = timeInputValue;
+    
     event.preventDefault();
     delete dateInput.dataset.default;
     delete timeInput.dataset.default;
-    if (!timeInput.value) timeInput.value = time.getTimeForInput();
-    const timeInputValue = Strings.getTimeInputValueMinutesMultipleOf5(timeInput.value);
-    timeInput.value = timeInputValue;
-    time.update(timeInput);
+    time.update(timeInput.value);
     snapElementsInClockBasedOnTimeObject(timeDialog);
     if (!scheduleDiv.innerHTML) createDateTimeElements();
     setDateTimeSpansAndButtonsText();
-    timeDialog.close();
 });
+function getDateObjCorrectedDay(timeInputValue) {
+    const dateTimeObj = new Date();
+    const desiredHours = +timeInputValue.slice(0,2);
+    const desiredMinutes = +timeInputValue.slice(3,5);
+    const currentTimeInputValue = Strings.getTimeStringInputFormat(dateTimeObj);
+    const currentHours = +currentTimeInputValue.slice(0,2);
+    const currentMinutes = +currentTimeInputValue.slice(3,5);
+
+    if ( currentHours > desiredHours || 
+        (currentHours === desiredHours && currentMinutes > desiredMinutes )) {
+        dateTimeObj.setDate(dateTimeObj.getDate() + 1);
+    }
+    return dateTimeObj;
+}
+function actionPresetButton(event, dateTimeObj, dateInputValue, timeInputValue) {
+    
+    if (!dateInputValue) {
+        dateInputValue = Strings.getDateStringInputFormat(dateTimeObj);
+    }
+    dateInput.value = dateInputValue;
+    
+    if (!timeInputValue) {
+        timeInputValue = Strings.getTimeStringInputFormat(dateTimeObj);
+        timeInputValue = Strings.getTimeInputValueMinutesMultipleOf5(timeInputValue);
+    }
+    timeInput.value = timeInputValue;
+    
+    event.preventDefault();
+    delete dateInput.dataset.default;
+    delete timeInput.dataset.default;
+    time.update(timeInput.value);
+    snapElementsInClockBasedOnTimeObject(timeDialog);
+    if (!scheduleDiv.innerHTML) createDateTimeElements();
+    setDateTimeSpansAndButtonsText();
+}
+
+
 function setDateTimeSpansAndButtonsText() {
     const timeString = Strings.getTimeStringForSpan(timeInput.value);
     setTimeButton.textContent = timeString;
@@ -338,22 +388,23 @@ function setDateTimeSpansAndButtonsText() {
 }
 function createDateTimeElements() {
     const dateSpan = document.createElement('span');
+    scheduleDiv.appendChild(dateSpan);
     dateSpan.id = 'date-span';
     
+    scheduleDiv.innerHTML += ', ';
+
     const timeSpan = document.createElement('span');
+    scheduleDiv.appendChild(timeSpan);
     timeSpan.id = 'time-span';
     
     const deleteButton = document.createElement('button');
+    scheduleDiv.appendChild(deleteButton);
     deleteButton.id = 'delete-date-time';
     deleteButton.classList.add('circle');
     deleteButton.innerHTML = '&#10060;';
     deleteButton.addEventListener('click', resetDateAndTime);
-    
-    scheduleDiv.appendChild(dateSpan);
-    scheduleDiv.innerHTML += ', ';
-    scheduleDiv.appendChild(timeSpan);
-    scheduleDiv.appendChild(deleteButton);
 }
+/////////
 function resetDateAndTime() {
     scheduleDiv.innerHTML = '';
     setDateButton.textContent = 'Set date';
@@ -389,45 +440,6 @@ threePMButton.addEventListener('click', (event) => {
     actionPresetButton(event, undefined, dateInputValue, timeInputValue);
 });
 
-function getDateObjCorrectedDay(timeInputValue) {
-    const dateTimeObj = new Date();
-    const desiredHours = +timeInputValue.slice(0,2);
-    const desiredMinutes = +timeInputValue.slice(3,5);
-    const currentTimeInputValue = Strings.getTimeStringInputFormat(dateTimeObj);
-    const currentHours = +currentTimeInputValue.slice(0,2);
-    const currentMinutes = +currentTimeInputValue.slice(3,5);
-
-    if ( currentHours > desiredHours || 
-        (currentHours === desiredHours && currentMinutes > desiredMinutes )) {
-        dateTimeObj.setDate(dateTimeObj.getDate() + 1);
-    }
-    return dateTimeObj;
-}
-
-
-function actionPresetButton(event, dateTimeObj, dateInputValue, timeInputValue) {
-    event.preventDefault();
-    
-    if (!dateInputValue) {
-        dateInputValue = Strings.getDateStringInputFormat(dateTimeObj);
-    }
-    dateInput.value = dateInputValue;
-    
-    if (!timeInputValue) {
-        timeInputValue = Strings.getTimeStringInputFormat(dateTimeObj);
-        timeInputValue = Strings.getTimeInputValueMinutesMultipleOf5(timeInputValue);
-    }
-    timeInput.value = timeInputValue;
-    
-    delete dateInput.dataset.default;
-    delete timeInput.dataset.default;
-    time.update(timeInput);
-    snapElementsInClockBasedOnTimeObject(timeDialog);
-    if (!scheduleDiv.innerHTML) createDateTimeElements();
-    setDateTimeSpansAndButtonsText();
-}
-
-
 
 
 
@@ -440,177 +452,10 @@ function getCategoriesContext() {
 }
 
 
-const createCategoryButton = document.querySelector('#create-category');
-const categoryFormDialog = document.querySelector('#category-dialog');
-const categoryNameInput = document.querySelector('#category-name');
-
-createCategoryButton.addEventListener('click', () => categoryFormDialog.show());
-
-const cancelCategoryButton = document.querySelector('#category-dialog .buttons .cancel');
-cancelCategoryButton.addEventListener('click', () => {
-    categoryNameInput.value = '';
-    categoryFormDialog.close();
-});
-
-const doneCategoryButton = document.querySelector('#category-dialog .buttons .done');
-doneCategoryButton.addEventListener('click', () => {
-    if (!categoryNameInput.value) categoryFormDialog.close();
-    createCategory();
-    categoryFormDialog.close()
-});
-
-const categoryPagesDiv = document.querySelector('#pages');
-const categoryCardsDiv = document.querySelector('#cards');
-
-
-function createCategory(category) {
-    if (!category) {
-        const name = categoryNameInput.value;
-        if (!name) return;
-        const iconCode = document.querySelector('input[name="icon"]:checked').value;
-        const type = 'custom';
-        category = new Category(name, iconCode, type);
-    }
-    const categoryDialog = getCategoryDialog(category);
-    createCategoryCard(category, categoryDialog);
-    createCategoryInput(category);
-}
-function createCategoryCard(category, categoryDialog) {
-    const categoryDiv = document.createElement('div');
-    categoryCardsDiv.appendChild(categoryDiv);
-    categoryDiv.dataset.id = category.id;
-    categoryDiv.classList.add('card');
-    categoryDiv.addEventListener('click', () => {
-        categoryDialog.show();
-        updateCategoryPage(categoryDialog);
-    });
-    
-    const iconSpan = document.createElement('span');
-    categoryDiv.appendChild(iconSpan);
-    iconSpan.innerHTML = `&#${category.iconCode};`;
-    
-    const titleSpan = document.createElement('span');
-    categoryDiv.appendChild(titleSpan);
-    titleSpan.textContent = category.name;
-
-    if (category.type === 'custom') {
-        const deleteButton = document.createElement('button');
-        categoryDiv.appendChild(deleteButton);
-        deleteButton.type = 'button';
-        deleteButton.innerHTML = '&#10060;';
-        deleteButton.classList.add('delete', 'circle');
-        deleteButton.addEventListener('click', (event) => {
-            event.stopPropagation();
-            const userSaidYes = confirm('Are you sure you want to permanently delete this category?');
-            if (!userSaidYes) return;
-            deleteCategory(category);
-        });
-    }
-    
-    const countSpan = document.createElement('span');
-    categoryDiv.appendChild(countSpan);
-    countSpan.dataset.id = category.id;
-    countSpan.textContent = 0;
-    countSpan.classList.add('count');
-}
-function updateCategoryPage(page) {
-    const taskArea = page.lastElementChild;
-    taskArea.innerHTML = '';
-    const category = Category.lists.all.get(page.dataset.id);
-    for (const task of category.tasks.values()) {
-        let taskHTML = Task.list.get(task.id).element;
-        taskArea.appendChild(taskHTML);
-    }
-}
-function getCategoryDialog(category) {
-    const categoryDialog = document.createElement('dialog');
-    categoryPagesDiv.appendChild(categoryDialog);
-    categoryDialog.dataset.id = category.id;
-    categoryDialog.classList.add('page');
-    categoryDialog.closedBy = 'any';
-    
-    const titleContainer = document.createElement('div');
-    categoryDialog.appendChild(titleContainer);
-    titleContainer.classList.add('title');
-
-    const backButton = document.createElement('button');
-    titleContainer.appendChild(backButton);
-    backButton.classList.add('circle', 'back');
-    backButton.textContent = '<=';
-    backButton.addEventListener('click', () => categoryDialog.close());
-
-    const titleH2 = document.createElement('h2');
-    titleContainer.appendChild(titleH2);
-    titleH2.textContent = category.name;
-
-    if (category.name === 'Completed' && category.type === 'default') {
-        const deleteAllButton = document.createElement('button');
-        titleContainer.appendChild(deleteAllButton);
-        deleteAllButton.classList.add('empty');
-        deleteAllButton.textContent = 'Empty list';
-        deleteAllButton.addEventListener('click', deleteAllCompletedTasks);
-    }
-
-    const taskContainer = document.createElement('div');
-    categoryDialog.appendChild(taskContainer);
-    taskContainer.classList.add('tasks');
-
-    return categoryDialog
-}
-function createCategoryInput(category) {
-    if (category.unselectable) return;
-
-    const li = document.createElement('li');
-    categoriesContext.firstElementChild.appendChild(li);
-
-    const label = document.createElement('label');
-    li.appendChild(label);
-
-    const input = document.createElement('input');
-    label.appendChild(input);
-    input.dataset.id = category.id;
-    input.type = 'radio';
-    input.name = 'category';
-    input.value = category.name;
-
-    const span = document.createElement('span');
-    label.appendChild(span);
-    span.innerHTML = `&#${category.iconCode};`;
-
-    const text = document.createTextNode(category.name);
-    label.appendChild(text);
-}
-
-
-function createDefaultCategories() {
-    for (const category of Category.lists.default.values()) {
-        createCategory(category);
-    }
-}
-
-
-function deleteAllCompletedTasks() {
-    const userSaidYes = confirm('Are you sure you want to delete permanently every completed task?');
-    if (!userSaidYes) return;
-    const completedCategory = Category.lists.default.get('Completed');
-    for (const task of completedCategory.tasks.values()) {
-        Category.remove(task);
-        const taskHTML = Task.list.get(task.id).element;
-        taskHTML.classList.add('is-completing');
-        setTimeout(() => {
-            taskHTML.remove();
-        }, 500);
-        Task.list.delete(task.id);
-        updateTaskCount();
-    }
-}
-
-
 
 
 navigator.virtualKeyboard.overlaysContent = true;
-createDefaultCategories();
 setDefaultDateForInput();
 setDefaultTimeForInput();
-time.update(timeInput);
+time.update(timeInput.value);
 snapElementsInClockBasedOnTimeObject(timeDialog);

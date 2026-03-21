@@ -99,27 +99,4 @@ function createDefaultCategories() {
 createDefaultCategories();
 
 
-
-const iconFielset = document.createElement('fieldset');
-const firstFieldsetOfCategoryDialog = document.querySelector('#category-dialog div :first-child');
-firstFieldsetOfCategoryDialog.after(iconFielset);
-iconFielset.id = 'icons';
-
-const iconCodes = [127809, 127928, 127937, 127968, 128021, 128276, 128293, 
-    128296, 128640, 128663, 128694, 129505];
-for (let i = 0; i < iconCodes.length; i++) {
-    let label = document.createElement('label');
-    label.innerHTML = `&#${iconCodes[i]};`
-    let input = document.createElement('input');
-    label.appendChild(input);
-    input.type = 'radio'; 
-    input.name = 'icon';
-    input.value = iconCodes[i];
-    input.classList.add('circle');
-    iconFielset.appendChild(label);
-}
-iconFielset.firstElementChild.children[0].checked = true;
-
-
-
 export { Category }
