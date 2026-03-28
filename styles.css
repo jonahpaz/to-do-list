@@ -50,7 +50,7 @@ body {
     margin: auto;
 
     #context {
-        height: 40vh;
+        height: 36vh;
     }
 
     #over-the-keyboard {
@@ -808,6 +808,7 @@ div.task-content {
     margin: 0 0 0 auto;
     min-height: 100vh;
     max-height: 100vh;
+    max-width: 100vw;
     
     width: clamp(100% - (100% - 370px)/2, 80vw, 1500px);
     padding: 0.5rem;
