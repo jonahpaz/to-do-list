@@ -22,6 +22,7 @@ for (let i = 0; i < iconCodes.length; i++) {
 iconFielset.firstElementChild.children[0].checked = true;
 
 
+const taskElementsStorage = new Map();
 
 const categoriesContext = document.querySelector('#categories-context');
 const categoryPagesDiv = document.querySelector('#pages');
@@ -30,7 +31,7 @@ const createCategoryButton = document.querySelector('#create-category');
 const categoryFormDialog = document.querySelector('#category-dialog');
 const categoryNameInput = document.querySelector('#category-name');
 
-createCategoryButton.addEventListener('click', () => categoryFormDialog.show());
+createCategoryButton.addEventListener('click', () => categoryFormDialog.showModal());
 
 const cancelCategoryButton = document.querySelector('#category-dialog .buttons .cancel');
 cancelCategoryButton.addEventListener('click', () => {
@@ -41,48 +42,52 @@ cancelCategoryButton.addEventListener('click', () => {
 const doneCategoryButton = document.querySelector('#category-dialog .buttons .done');
 doneCategoryButton.addEventListener('click', () => {
     if (!categoryNameInput.value) categoryFormDialog.close();
-    createCategory();
+    createCategoryHTML();
     categoryFormDialog.close();
+    categoryNameInput.value = '';
 });
 
-function createCategory(category) {
+function createCategoryHTML(category) {
     if (!category) {
-        const name = categoryNameInput.value;
-        if (!name) return;
-        const iconCode = document.querySelector('input[name="icon"]:checked').value;
-        const type = 'custom';
-        category = new Category(name, iconCode, type);
+        const data = {};
+        data.name = categoryNameInput.value;
+        if (!data.name) return;
+        data.iconCode = document.querySelector('input[name="icon"]:checked').value;
+        data.type = 'custom';
+        category = new Category(data);
     }
     const categoryDialog = getCategoryDialog(category);
     createCategoryCard(category, categoryDialog);
     createCategoryInput(category);
 }
 function createCategoryCard(category, categoryDialog) {
-    const categoryDiv = document.createElement('div');
-    categoryCardsDiv.appendChild(categoryDiv);
-    categoryDiv.tabIndex = 0;
-    categoryDiv.dataset.id = category.id;
-    categoryDiv.classList.add('card');
-    categoryDiv.addEventListener('click', () => {
-        categoryDialog.show();
+    const categoryButton = document.createElement('button');
+    categoryCardsDiv.appendChild(categoryButton);
+    categoryButton.dataset.id = category.id;
+    categoryButton.classList.add('card');
+    categoryButton.addEventListener('click', () => {
+        categoryDialog.showModal();
         updateCategoryPage(categoryDialog);
     });
-    
+
     const iconSpan = document.createElement('span');
-    categoryDiv.appendChild(iconSpan);
+    categoryButton.appendChild(iconSpan);
+    iconSpan.classList.add('icon');
     iconSpan.innerHTML = `&#${category.iconCode};`;
     
     const titleSpan = document.createElement('span');
-    categoryDiv.appendChild(titleSpan);
+    categoryButton.appendChild(titleSpan);
+    titleSpan.classList.add('title');
     titleSpan.textContent = category.name;
 
     if (category.type === 'custom') {
-        const deleteButton = document.createElement('button');
-        categoryDiv.appendChild(deleteButton);
-        deleteButton.type = 'button';
+        const deleteButton = document.createElement('span');
+        categoryButton.appendChild(deleteButton);
+        deleteButton.tabIndex = '0';
         deleteButton.innerHTML = '&#10060;';
-        deleteButton.classList.add('delete', 'circle');
+        deleteButton.classList.add('button','delete', 'circle');
         deleteButton.addEventListener('click', (event) => {
+            event.preventDefault();
             event.stopPropagation();
             const userSaidYes = confirm('Are you sure you want to permanently delete this category?');
             if (!userSaidYes) return;
@@ -91,18 +96,18 @@ function createCategoryCard(category, categoryDialog) {
     }
     
     const countSpan = document.createElement('span');
-    categoryDiv.appendChild(countSpan);
+    categoryButton.appendChild(countSpan);
     countSpan.dataset.id = category.id;
     countSpan.textContent = 0;
     countSpan.classList.add('count');
 }
 function updateCategoryPage(page) {
-    const taskArea = page.lastElementChild;
-    taskArea.innerHTML = '';
-    const category = Category.lists.all.get(page.dataset.id);
-    for (const task of category.tasks.values()) {
-        let taskHTML = Task.list.get(task.id).element;
-        taskArea.appendChild(taskHTML);
+    const tasksArea = page.lastElementChild;
+    tasksArea.innerHTML = '';//// Quiza puedo solo borrarlo y ya;
+    const category = Category.list.get(page.dataset.id);
+    for (const taskId of category.tasks) {
+        let taskElement = taskElementsStorage.get(taskId);
+        tasksArea.appendChild(taskElement);
     }
 }
 function getCategoryDialog(category) {
@@ -167,8 +172,8 @@ function deleteCategory(category) {
     for (const task of category.tasks.values()) {
         task.categoryId = undefined;
     }
-    Category.lists.custom.delete(category.id);
-    Category.lists.all.delete(category.id)
+    Category.removeCustomFromLists(category);
+    Category.updateStorage();
     const categoryCard = document.querySelector(`.card[data-id="${category.id}"]`);
     categoryCard.remove();
     const categoryDialog = document.querySelector(`.page[data-id="${category.id}"]`);
@@ -179,28 +184,30 @@ function deleteCategory(category) {
 function deleteAllCompletedTasks() {
     const userSaidYes = confirm('Are you sure you want to delete permanently every completed task?');
     if (!userSaidYes) return;
-    const completedCategory = Category.lists.default.get('Completed');
-    for (const task of completedCategory.tasks.values()) {
-        Category.remove(task);
-        const taskHTML = Task.list.get(task.id).element;
-        taskHTML.classList.add('is-completing');
-        setTimeout(() => {
-            taskHTML.remove();
-        }, 500);
-        Task.list.delete(task.id);
-        updateTaskCount();
+    const completedCategory = Category.default.get('Completed');
+    for (const taskId of completedCategory.tasks) {
+        const taskElement = taskElementsStorage.get(taskId);
+        taskElement.classList.add('is-completing');
+        setTimeout(() => taskElement.remove(), 500);
+
+        const task = Task.list.get(taskId);
+        Category.removeTask(task);
+        Task.list.delete(taskId);
     }
+    Task.updateStorage();
+    Category.updateStorage();
+    updateTaskCount();
 }
 function updateTaskCount(selectedCategoryRadio) {
-    for (const category of Category.lists.all.values()) {
+    for (const category of Category.list.values()) {
         const categoryDiv = document.querySelector(`.card[data-id="${category.id}"]`);
         const countSpan = categoryDiv.lastElementChild;
         countSpan.textContent = category.tasks.size;
     }
 }
 function createDefaultCategories() {
-    for (const category of Category.lists.default.values()) {
-        createCategory(category);
+    for (const category of Category.default.values()) {
+        createCategoryHTML(category);
     }
 }
 
@@ -208,5 +215,5 @@ function createDefaultCategories() {
 
 createDefaultCategories();
 
-export { updateTaskCount }
+export { updateTaskCount, createCategoryHTML, taskElementsStorage }
 

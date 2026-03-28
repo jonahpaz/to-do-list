@@ -14,7 +14,27 @@
         <div id="cards">
         </div>        
         
-        <footer>
+        <button class="footer">
+            <span class="container">
+                <span class="button circle">&#10133;</span>
+                <span class="textarea">Add reminder</span>
+            </span>
+        </button>
+
+        <dialog id="category-dialog" class="category form">
+                    <div id="new-category" class="form">
+                        <fieldset>
+                            <label for="category-name">Category name:</label>
+                            <input type="text" placeholder= '"Home" or "Work"...' id="category-name">
+                        </fieldset>
+                        <div class="buttons">
+                            <button type="button" class="cancel">Cancel</button>
+                            <button type="button" class="done">Done</button>
+                        </div>
+                    </div>
+                </dialog>
+
+        <dialog class="footer">
             <form id="new-task" action="">
                 <dialog id="date-dialog" class="date form">
                     <div id="calendar" class="form">
@@ -36,18 +56,7 @@
                     </div>
                 </dialog>
                 
-                <dialog id="category-dialog" class="category form">
-                    <div id="new-category" class="form">
-                        <fieldset>
-                            <label for="category-name">Category name:</label>
-                            <input type="text" placeholder= '"Home" or "Work"...' id="category-name">
-                        </fieldset>
-                        <div class="buttons">
-                            <button type="button" class="cancel">Cancel</button>
-                            <button type="button" class="done">Done</button>
-                        </div>
-                    </div>
-                </dialog>
+                
                 
                 
                 <div id="over-the-keyboard">
@@ -111,7 +120,7 @@
                     </fieldset>
                 </fieldset>
             </form>
-        </footer>
+        </dialog>
     </div>
 </body>
 </html>

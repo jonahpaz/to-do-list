@@ -2,7 +2,7 @@ import { time, snapElementsInClockBasedOnTimeObject } from "./clock.mjs";
 import { Task } from "./task.mjs";
 import * as Strings from "./strings.mjs";
 import { Category } from "./categories.mjs";
-import { updateTaskCount } from "./categoriesDom.mjs";
+import { updateTaskCount, createCategoryHTML, taskElementsStorage } from "./categoriesDom.mjs";
 
 const newSubtaskButton = document.querySelector('#new-subtask');
 const taskDiv = document.querySelector('#task');
@@ -14,11 +14,11 @@ function addNewSubtask() {
     const containerLi = document.createElement('li');
     containerLi.dataset.type = 'sub-task';
     containerLi.classList.add('sub-task');
-
+    
     const checkBox = document.createElement('input');
     containerLi.appendChild(checkBox);
     checkBox.type = 'checkbox';
-
+    
     const subTask = document.createElement('textarea');
     containerLi.appendChild(subTask);
     
@@ -33,7 +33,7 @@ function addNewSubtaskByPressingEnter(event) {
     const textarea = this.lastElementChild;
     if (textarea !== document.activeElement) return;
     if (event.key !== 'Enter') return;
-
+    
     event.preventDefault();
     const restText = textarea.value.slice(textarea.selectionStart, textarea.value.length);
     let newItem = addNewSubtask();
@@ -44,7 +44,7 @@ function gofromLiToTextArea(event) {
     if (event.key !== 'Backspace') return;
     if (this.lastElementChild.selectionStart !== 0) return;
     if (this.lastElementChild.selectionEnd !== 0) return;
-
+    
     event.preventDefault();
     const previousText = this.lastElementChild.value;
     const newTextArea = document.createElement('textarea');
@@ -53,7 +53,7 @@ function gofromLiToTextArea(event) {
     newTextArea.value += previousText;
     this.replaceWith(newTextArea);
     newTextArea.focus();
-
+    
     newTextArea.addEventListener('keydown', removeTextArea);
 }
 function removeTextArea(event) {
@@ -68,22 +68,23 @@ function removeTextArea(event) {
     if (this.previousElementSibling.tagName === 'TEXTAREA')
         {previousTextArea = this.previousElementSibling}
     else {previousTextArea = this.previousElementSibling.lastElementChild}
-
+    
     this.remove();
     previousTextArea.value += previousText;
     previousTextArea.focus();
 }
 
+
 function getTaskHTML(task) {
     const taskContainer = document.createElement('div');
     taskContainer.dataset.id = task.id;
     taskContainer.classList.add('task-container');
-    Task.list.get(task.id).element = taskContainer;
 
     const completeCheckbox = document.createElement('input');
     taskContainer.appendChild(completeCheckbox);
     completeCheckbox.classList.add('complete', 'circle');
     completeCheckbox.type = 'checkbox';
+    completeCheckbox.style.display = task.completed ? 'none': 'inline-block';
     completeCheckbox.addEventListener('change', () => {
         completeTask(task, taskContainer, completeCheckbox, undoButton);
     });
@@ -93,7 +94,7 @@ function getTaskHTML(task) {
     undoButton.classList.add('undo', 'circle');
     undoButton.type = 'button';
     undoButton.innerHTML = '&#8630;';
-    undoButton.style.display = 'none';
+    undoButton.style.display = task.completed ? 'inline-block': 'none';
     undoButton.addEventListener('click', () => {
         undoCompleteTask(task, taskContainer, completeCheckbox, undoButton);
     });
@@ -143,8 +144,12 @@ function getTaskHTML(task) {
         const scheduleDiv = document.createElement('div');
         taskContainer.appendChild(scheduleDiv);
         scheduleDiv.classList.add('schedule');
-        scheduleDiv.textContent = 
-            `${setDateButton.textContent}, ${setTimeButton.textContent}`;////////////
+        if (!task.schedule) {
+            const schedule = `${setDateButton.textContent}, ${setTimeButton.textContent}`;
+            task.schedule = schedule;
+            Task.updateStorage();
+        }
+        scheduleDiv.textContent = task.schedule;
     }
 
     return taskContainer;
@@ -156,11 +161,12 @@ function completeTask(task, taskContainer, completeCheckbox, undoButton) {
         taskContainer.classList.remove('is-completing');
         completeCheckbox.style.display = 'none';
         undoButton.style.display = 'inline-block';
-        
-        task.completed = true;
-        Category.update(task);
-        updateTaskCount();
     }, 500);
+    
+    task.completed = true;
+    Task.updateStorage();
+    Category.update(task);
+    updateTaskCount();
 }
 function undoCompleteTask(task, taskContainer, completeCheckbox, undoButton) {
     taskContainer.classList.add('is-completing');
@@ -172,6 +178,7 @@ function undoCompleteTask(task, taskContainer, completeCheckbox, undoButton) {
         undoButton.style.display = 'none';
         
         task.completed = false;
+        Task.updateStorage();
         Category.update(task);
         updateTaskCount();
     }, 500);
@@ -185,12 +192,14 @@ function deleteTask(task, taskContainer) {
         taskContainer.classList.remove('is-completing');
         
         Task.list.delete(task.id);
-        Category.remove(task);
+        Task.updateStorage();
+        Category.removeTask(task);
+        Category.updateStorage();
         updateTaskCount();
     }, 500);
 }
 
-
+const customCategoriesData = [];
 function getTaskFormData() {
     const categoryRadio = document.querySelector('input[name="category"]:checked');
     let data = {};
@@ -225,19 +234,19 @@ newTaskButton.addEventListener('click', (event) => {
     event.preventDefault();
     const textAreas = [...taskDiv.querySelectorAll('textarea')];
     if (!textAreas.every(tA => tA.value)) return;
-    
 
     const data = getTaskFormData();
     const newTask = new Task(data);
 
-    const newTaskHTML = getTaskHTML(newTask);
-    Task.list.get(newTask.id).element = newTaskHTML;
+    let taskElement = getTaskHTML(newTask);
+    taskElementsStorage.set(newTask.id, taskElement);
 
     Category.update(newTask);
     updateTaskCount();
 
     updateConsole(newTask);
     resetForm();
+    dialogFooter.close();
 });
 function updateConsole(task) {
     console.log(task);
@@ -454,8 +463,50 @@ function getCategoriesContext() {
 
 
 
+function setContentFromLocalStorage() {
+    const savedDefaultString = localStorage.getItem('defaultCategoriesData');
+    const defaultCategoriesData = JSON.parse(savedDefaultString);
+    if (savedDefaultString && defaultCategoriesData.length > 0) {
+        defaultCategoriesData.forEach(data => {
+            const category = Category.default.get(data.name);
+            category.tasks = new Set(data.tasks);
+        });
+    }
+    const savedCustomString = localStorage.getItem('customCategoriesData');
+    const customCategoriesData = JSON.parse(savedCustomString);
+    if (savedCustomString && customCategoriesData.length > 0) {
+        customCategoriesData.forEach(data => {
+            data.category.tasks = new Set(data.tasks);
+            Object.setPrototypeOf(data.category, Category.prototype);
+            Category.addToLists(data.category);
+            createCategoryHTML(data.category);
+        });
+    }
+    const tasksDataString = localStorage.getItem('tasksData');
+    let tasksData;
+    if (tasksDataString) tasksData = JSON.parse(tasksDataString);
+    if (tasksData) {
+        tasksData.forEach(task => {
+            Object.setPrototypeOf(task, Task.prototype);
+            Task.list.set(task.id, task);
+            let taskElement = getTaskHTML(task);
+            taskElementsStorage.set(task.id, taskElement);
+        });
+    }
+    updateTaskCount();
+}
+
+
+
+const dialogFooter = document.querySelector('dialog.footer');
+const buttonFooter = document.querySelector('button.footer');
+buttonFooter.addEventListener('click', () => {
+    dialogFooter.showModal();
+})
+
 navigator.virtualKeyboard.overlaysContent = true;
 setDefaultDateForInput();
 setDefaultTimeForInput();
 time.update(timeInput.value);
 snapElementsInClockBasedOnTimeObject(timeDialog);
+setContentFromLocalStorage();
