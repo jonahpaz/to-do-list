@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+<script defer src="main.js"></script></head>
+<body>
+    <div id="pages">
+    </div>
+    <div id="page">
+
+        <div id="cards">
+        </div>        
+        
+        <dialog id="date-dialog" class="date form">
+            <div id="calendar" class="form">
+                <input type="date" name="date" aria-label="Date">
+                <div class="buttons">
+                    <button type="button" id="cancel-date" class="cancel">Cancel</button>
+                    <button type="button" id="done-date" class="done">Done</button>
+                </div>
+            </div>
+        </dialog>
+
+        <dialog id="time-dialog" class="time form">
+            <div class="form">
+                <input type="time" name="time" aria-label="Time">
+                <div class="buttons">
+                    <button type="button" class="cancel">Cancel</button>
+                    <button type="button" class="done">Done</button>
+                </div>
+            </div>
+        </dialog>
+
+        <dialog id="category-dialog" class="category form">
+            <div id="new-category" class="form">
+                <fieldset>
+                    <label for="category-name">Category name:</label>
+                    <input type="text" placeholder= '"Home" or "Work"...' id="category-name">
+                </fieldset>
+                <div class="buttons">
+                    <button type="button" class="cancel">Cancel</button>
+                    <button type="button" class="done">Done</button>
+                </div>
+            </div>
+        </dialog>
+
+        <button class="footer">
+            <span class="container">
+                <span class="button circle">&#10133;</span>
+                <span class="textarea">Add reminder</span>
+            </span>
+        </button>
+
+        <dialog class="footer">
+            <form id="new-task" action="">
+
+                <div id="over-the-keyboard">
+                    <fieldset id="text-area" class="content">
+                        <div id="task" class="task-content">
+                            <textarea name="task" id="task" placeholder="Add reminder"  required data-type="main-task"></textarea>
+                        </div>
+                        <div id="schedule"></div>
+                        <button type="submit" form="new-task " class="circle done">&#10004;</button>
+                    </fieldset>
+    
+                    <fieldset class="buttons">
+                        <button type="button" id="new-subtask" class="circle">&#10033;&#10004;</button>
+                        <button type="button" id="set-date-and-time" class="circle">&#128197;</button>
+                        <button type="button" id="set-category" class="circle">&#10067;&#10071;</button>
+                    </fieldset>
+                </div>
+
+                <fieldset id="context">
+                    
+                    <div id="date-and-time-context" class="context">
+                        <span>&#128197;</span>
+                        <div class="buttons">
+                            <div>
+                                <button id="set-date" type="button">Set date</button>
+                                <button id="set-time" type="button">Set time</button>
+                            </div>
+                            <div class="presets">
+                                <button type="button" id="one-hour-from-now">
+                                    1 hour from now
+                                </button>
+                                <button type="button" id="seven-am">
+                                    7:00 AM
+                                </button>
+                                <button type="button" id="three-pm">
+                                    3:00 PM
+                                </button>
+                                <button type="button" id="ten-pm">
+                                    10:00 PM
+                                </button>
+                                <!-- <button type="button">
+                                    &#9881;
+                                </button> -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <fieldset id="categories-context" class="context">
+                        <div>
+                            <li>
+                                <label for="none">
+                                    <input type="radio" name="category" id="none" value="None" checked>
+                                    None
+                                </label>
+                            </li>
+                        </div>
+                        <li>
+                            <button type="button" id="create-category">
+                                <span>&#10133;</span>Add Category
+                            </button>
+                        </li>
+                    </fieldset>
+
+                </fieldset>
+
+            </form>
+
+        </dialog>
+    </div>
+</body>
+</html>
