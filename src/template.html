@@ -4,16 +4,48 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-    <script type="module" src="modules/script.js"></script>
-    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div id="pages">
     </div>
     <div id="page">
+
         <div id="cards">
         </div>        
         
+        <dialog id="date-dialog" class="date form">
+            <div id="calendar" class="form">
+                <input type="date" name="date" aria-label="Date">
+                <div class="buttons">
+                    <button type="button" id="cancel-date" class="cancel">Cancel</button>
+                    <button type="button" id="done-date" class="done">Done</button>
+                </div>
+            </div>
+        </dialog>
+
+        <dialog id="time-dialog" class="time form">
+            <div class="form">
+                <input type="time" name="time" aria-label="Time">
+                <div class="buttons">
+                    <button type="button" class="cancel">Cancel</button>
+                    <button type="button" class="done">Done</button>
+                </div>
+            </div>
+        </dialog>
+
+        <dialog id="category-dialog" class="category form">
+            <div id="new-category" class="form">
+                <fieldset>
+                    <label for="category-name">Category name:</label>
+                    <input type="text" placeholder= '"Home" or "Work"...' id="category-name">
+                </fieldset>
+                <div class="buttons">
+                    <button type="button" class="cancel">Cancel</button>
+                    <button type="button" class="done">Done</button>
+                </div>
+            </div>
+        </dialog>
+
         <button class="footer">
             <span class="container">
                 <span class="button circle">&#10133;</span>
@@ -21,44 +53,9 @@
             </span>
         </button>
 
-        <dialog id="category-dialog" class="category form">
-                    <div id="new-category" class="form">
-                        <fieldset>
-                            <label for="category-name">Category name:</label>
-                            <input type="text" placeholder= '"Home" or "Work"...' id="category-name">
-                        </fieldset>
-                        <div class="buttons">
-                            <button type="button" class="cancel">Cancel</button>
-                            <button type="button" class="done">Done</button>
-                        </div>
-                    </div>
-                </dialog>
-
         <dialog class="footer">
             <form id="new-task" action="">
-                <dialog id="date-dialog" class="date form">
-                    <div id="calendar" class="form">
-                        <input type="date" name="date" aria-label="Date">
-                        <div class="buttons">
-                            <button type="button" id="cancel-date" class="cancel">Cancel</button>
-                            <button type="button" id="done-date" class="done">Done</button>
-                        </div>
-                    </div>
-                </dialog>
-                
-                <dialog id="time-dialog" class="time form">
-                    <div class="form">
-                        <input type="time" name="time" aria-label="Time">
-                        <div class="buttons">
-                            <button type="button" class="cancel">Cancel</button>
-                            <button type="button" class="done">Done</button>
-                        </div>
-                    </div>
-                </dialog>
-                
-                
-                
-                
+
                 <div id="over-the-keyboard">
                     <fieldset id="text-area" class="content">
                         <div id="task" class="task-content">
@@ -76,6 +73,7 @@
                 </div>
 
                 <fieldset id="context">
+                    
                     <div id="date-and-time-context" class="context">
                         <span>&#128197;</span>
                         <div class="buttons">
@@ -118,8 +116,11 @@
                             </button>
                         </li>
                     </fieldset>
+
                 </fieldset>
+
             </form>
+
         </dialog>
     </div>
 </body>
