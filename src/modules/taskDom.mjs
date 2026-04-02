@@ -1,6 +1,7 @@
 import { Task } from "./task.mjs";
 import { Category } from "./categories.mjs";
 import { updateTaskCount } from "./categoriesDom.mjs";
+import { dateDom, timeDom } from "./dateTimeDom.mjs";
 
 //podrias aniadir funcionalidad de editar tasks con un boton y ahi si usando los eventlisteners de abajo comentados
 
